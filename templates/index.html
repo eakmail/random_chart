@@ -1,0 +1,156 @@
+﻿<style>
+@import url(https://fonts.googleapis.com/css?family=Roboto);
+
+P { text-align: center }
+
+H1 { text-align: center }
+
+body {
+  font-family: Roboto, sans-serif;
+}
+
+#chart {
+  max-width: 650px;
+  margin: 35px auto;
+}
+
+select {
+  border:none;
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  background:none;
+  background-color:white;
+  outline:0px;
+	box-shadow: none;
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<body>
+
+<h1></h1><p>This is a demo of a random chart: 
+<select id="mySelect" onchange="update_chart()">
+</select>
+</p>
+
+<div id="chart"></div>
+
+<script>
+  var selectElement = document.getElementById('mySelect');
+  
+  var ticker_datas = [];
+
+  var was_index = -1;
+
+  for (var i = 0; i < 100; i++) {
+	selectElement.appendChild(new Option("ticker_" + ((i < 10) ? "0" : "") + i));
+  }
+  
+  for (var i = 0; i < 100; i++) {
+    ticker_datas.push([]);
+  }
+
+  var options = {
+    series: [{
+      data: []
+    }],
+    chart: {
+      type: 'candlestick',
+      height: 350
+    },
+    title: {
+      text: '',
+      align: 'left'
+    },
+    xaxis: {
+      type: 'datetime'
+    },
+    yaxis: {
+      tooltip: {
+        enabled: true
+      }
+    }
+  };
+
+  var chart = new ApexCharts(document.querySelector("#chart"), options);
+  chart.render();		
+  
+  function get_candle(data, start, end) {
+    open = data[start];
+    hi = data[start];
+	  low = data[start];
+	  close = data[end-1];
+
+    for (let i = start + 1; i < end; i++)
+	  {
+      hi = Math.max(data[i], hi);
+      low = Math.min(data[i], low);
+	  }
+	
+    return [open, hi, low, close];
+  }
+  
+  function get_candles(start_time_sec, data) {
+    var modulo_sec = start_time_sec % 60;
+    var timestamp = 1000 * start_time_sec - (new Date().getTimezoneOffset()) * 60000;
+
+	  var candles = [{
+      x: new Date(timestamp),
+      y: get_candle(data, 0, Math.min(data.length, modulo_sec))
+	  }];
+  
+     for (let i = modulo_sec; i < data.length; i += 60) {
+	     candles.push({
+          x: new Date(timestamp + 1000*i),
+          y: get_candle(data, i, Math.min(data.length, i + 60))
+	     });
+     }
+	  
+	  return candles;	  
+  }
+  
+  function update_chart()
+  {
+    $.getJSON('http://localhost:4999/api/v1/start_time', function(start_time_response) {
+	    var ticker_index = selectElement.selectedIndex;
+	    var start_index = ticker_datas[ticker_index].length;
+	  
+      $.getJSON(`http://localhost:4999/api/v1/tickers?ticker=${ticker_index}&start=${start_index}`, function(ticker_data) {	
+	  	{
+		    if (start_index == ticker_datas[ticker_index].length)
+		    {
+	          for (let i in ticker_data) { ticker_datas[ticker_index].push(ticker_data[i]); }
+            was_index = -1;
+		    }
+
+        var new_ticker_index = selectElement.selectedIndex;
+
+        if (was_index != new_ticker_index)
+        {
+          was_index = new_ticker_index;
+	        chart.updateSeries([{
+              name: 'ticker_00',
+              data: get_candles(start_time_response, ticker_datas[new_ticker_index])
+            }]);
+        }
+      }});
+    });
+  }
+  
+  function update_loop() {         
+    setTimeout(function() {
+      update_chart();
+	    update_loop();
+    }, 100)
+  }
+  
+  update_chart();
+  
+  update_loop();
+  
+</script>
+
+</body>
