@@ -32,7 +32,7 @@ select {
 <body>
 
 <h1></h1><p>This is a demo of a random chart: 
-<select id="mySelect" onchange="update_chart()">
+<select id="mySelect" onchange="update_chart(false)">
 </select>
 </p>
 
@@ -112,7 +112,7 @@ select {
 	  return candles;	  
   }
   
-  function update_chart()
+  function update_chart(recall)
   {
     $.getJSON('http://localhost:4999/api/v1/start_time', function(start_time_response) {
 	    var ticker_index = selectElement.selectedIndex;
@@ -136,18 +136,15 @@ select {
               data: get_candles(start_time_response, ticker_datas[new_ticker_index])
             }]);
         }
+
+        if (recall) {
+          update_chart(true);
+        }
       }});
     });
   }
   
-  function update_loop() {         
-    setTimeout(function() {
-      update_chart();
-	    update_loop();
-    }, 100)
-  }
-  
-  update_chart();
+  update_chart(true);
   
   update_loop();
   

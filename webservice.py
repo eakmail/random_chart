@@ -4,10 +4,12 @@ from random import random
 import time
 import flask
 from flask import request, jsonify, render_template
-from threading import Thread
+from threading import Event, Thread
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
+
+event = Event()
 
 tickers = [[0] for i in range(100)]
 
@@ -23,6 +25,14 @@ def get_tickers():
         start = int(request.args['start'])
     else:
         return "Error: No ticker and start fields provided. Please specify an ticker and start."
+
+    print("%i %i", start, len(tickers[ticker]))
+
+    while (start == len(tickers[ticker])):
+        event.wait(timeout = 1)
+        event.clear()
+
+    print("%i %i", start, len(tickers[ticker]))
 
     return jsonify(tickers[ticker][start:])
 
@@ -44,6 +54,7 @@ def generate_tickers_loop():
     while True:        
         time.sleep(1.0)
         tickers = [append_ticker(ticker) for ticker in tickers]
+        event.set()
 
 thread = Thread(target=generate_tickers_loop)
 
