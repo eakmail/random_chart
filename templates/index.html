@@ -94,15 +94,15 @@ select {
   }
   
   function get_candles(start_time_sec, data) {
-    var modulo_sec = start_time_sec % 60;
+    var modulo_sec = (start_time_sec % 60);
     var timestamp = 1000 * start_time_sec - (new Date().getTimezoneOffset()) * 60000;
 
 	  var candles = [{
-      x: new Date(timestamp),
+      x: new Date(timestamp - modulo_sec * 1000),
       y: get_candle(data, 0, Math.min(data.length, modulo_sec))
 	  }];
   
-     for (let i = modulo_sec; i < data.length; i += 60) {
+     for (let i = 60 - (start_time_sec % 60); i < data.length; i += 60) {
 	     candles.push({
           x: new Date(timestamp + 1000*i),
           y: get_candle(data, i, Math.min(data.length, i + 60))
