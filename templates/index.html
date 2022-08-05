@@ -138,7 +138,9 @@ select {
         }
 
         if (recall) {
-          update_chart(true);
+          setTimeout(function() {
+            update_chart(true);
+          }, 200);          
         }
       }});
     });
