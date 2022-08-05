@@ -26,13 +26,9 @@ def get_tickers():
     else:
         return "Error: No ticker and start fields provided. Please specify an ticker and start."
 
-    print("%i %i", start, len(tickers[ticker]))
-
     while (start == len(tickers[ticker])):
         event.wait(timeout = 1)
         event.clear()
-
-    print("%i %i", start, len(tickers[ticker]))
 
     return jsonify(tickers[ticker][start:])
 
